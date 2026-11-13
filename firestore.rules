@@ -1,0 +1,215 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Helper Primitives
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidShortId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 64 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Entity Validation Blueprints (Anti-Update-Gap)
+    function isValidUserSettings(data, userId) {
+      return data.keys().hasAll(['uid', 'preferredVoice', 'speakingRate', 'draftText', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'preferredVoice', 'speakingRate', 'draftText', 'createdAt', 'updatedAt'])
+        && data.uid is string
+        && data.uid == userId
+        && isValidId(data.uid)
+        && isValidShortId(data.preferredVoice)
+        && data.speakingRate is number
+        && data.speakingRate >= 0.8
+        && data.speakingRate <= 1.5
+        && data.draftText is string
+        && data.draftText.size() <= 10000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivateProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'photoURL', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'createdAt', 'updatedAt'])
+        && data.uid is string
+        && data.uid == userId
+        && isValidId(data.uid)
+        && data.email is string
+        && data.email.size() <= 320
+        && data.displayName is string
+        && data.displayName.size() <= 120
+        && data.photoURL is string
+        && data.photoURL.size() <= 1000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidVoiceoverProject(data, userId) {
+      return data.keys().hasAll([
+          'ownerId',
+          'title',
+          'text',
+          'voiceId',
+          'voiceName',
+          'speakingRate',
+          'srtContent',
+          'charCount',
+          'estimatedDurationSeconds',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId',
+          'title',
+          'text',
+          'voiceId',
+          'voiceName',
+          'speakingRate',
+          'srtContent',
+          'charCount',
+          'estimatedDurationSeconds',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.ownerId is string
+        && data.ownerId == userId
+        && isValidId(data.ownerId)
+        && data.title is string
+        && data.title.size() >= 1
+        && data.title.size() <= 120
+        && data.text is string
+        && data.text.size() >= 1
+        && data.text.size() <= 10000
+        && isValidShortId(data.voiceId)
+        && data.voiceName is string
+        && data.voiceName.size() >= 1
+        && data.voiceName.size() <= 100
+        && data.speakingRate is number
+        && data.speakingRate >= 0.8
+        && data.speakingRate <= 1.5
+        && data.srtContent is string
+        && data.srtContent.size() <= 20000
+        && data.charCount is int
+        && data.charCount >= 1
+        && data.charCount <= 10000
+        && data.estimatedDurationSeconds is number
+        && data.estimatedDurationSeconds >= 0
+        && data.estimatedDurationSeconds <= 86400
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // Collection Rules
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId)
+        && isValidId(userId)
+        && isValidUserSettings(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isOwner(userId)
+        && isValidId(userId)
+        && isValidUserSettings(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['preferredVoice', 'speakingRate', 'draftText', 'updatedAt']);
+
+      allow delete: if false;
+
+      // Isolated PII subcollection (strictly private to owner)
+      match /private/{docId} {
+        allow get: if isValidId(userId) && docId == 'profile' && isOwner(userId);
+        allow list: if false;
+
+        allow create: if isOwner(userId)
+          && isValidId(userId)
+          && docId == 'profile'
+          && isValidUserPrivateProfile(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId));
+
+        allow update: if isOwner(userId)
+          && isValidId(userId)
+          && docId == 'profile'
+          && isValidUserPrivateProfile(incoming(), userId)
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'photoURL', 'updatedAt']);
+
+        allow delete: if false;
+      }
+
+      // Saved Voiceover Scripts & Subtitles
+      match /projects/{projectId} {
+        allow get: if isValidId(userId)
+          && isValidId(projectId)
+          && isOwner(userId)
+          && existing().ownerId == request.auth.uid;
+
+        allow list: if isOwner(userId)
+          && existing().ownerId == request.auth.uid;
+
+        allow create: if isOwner(userId)
+          && isValidId(userId)
+          && isValidId(projectId)
+          && isValidVoiceoverProject(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId));
+
+        allow update: if isOwner(userId)
+          && isValidId(userId)
+          && isValidId(projectId)
+          && isValidVoiceoverProject(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId))
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'title',
+            'text',
+            'voiceId',
+            'voiceName',
+            'speakingRate',
+            'srtContent',
+            'charCount',
+            'estimatedDurationSeconds',
+            'updatedAt'
+          ]);
+
+        allow delete: if isValidId(userId)
+          && isValidId(projectId)
+          && isOwner(userId)
+          && existing().ownerId == request.auth.uid;
+      }
+    }
+  }
+}

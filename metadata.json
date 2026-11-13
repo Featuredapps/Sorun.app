@@ -1,0 +1,8 @@
+{
+  "name": "Audio Studio Pro: AI Voice Synthesis",
+  "description": "A professional AI voice synthesis studio for high-fidelity Arabic voiceovers with precise articulation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

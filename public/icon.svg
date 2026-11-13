@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18102A"/>
+      <stop offset="50%" stop-color="#0E0B18"/>
+      <stop offset="100%" stop-color="#09090E"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#4F46E5"/>
+    </linearGradient>
+    <linearGradient id="waveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E9D5FF"/>
+      <stop offset="100%" stop-color="#818CF8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  <circle cx="256" cy="256" r="176" fill="url(#accentGrad)" opacity="0.14"/>
+  <circle cx="256" cy="256" r="144" fill="none" stroke="url(#accentGrad)" stroke-width="4" opacity="0.45"/>
+
+  <!-- Soundwave bars left -->
+  <rect x="108" y="226" width="16" height="60" rx="8" fill="url(#waveGrad)" opacity="0.75"/>
+  <rect x="138" y="192" width="16" height="128" rx="8" fill="url(#waveGrad)" opacity="0.9"/>
+
+  <!-- Soundwave bars right -->
+  <rect x="358" y="192" width="16" height="128" rx="8" fill="url(#waveGrad)" opacity="0.9"/>
+  <rect x="388" y="226" width="16" height="60" rx="8" fill="url(#waveGrad)" opacity="0.75"/>
+
+  <!-- Studio Microphone Center -->
+  <rect x="212" y="132" width="88" height="156" rx="44" fill="url(#accentGrad)"/>
+  <rect x="230" y="156" width="52" height="8" rx="4" fill="#FFFFFF" opacity="0.35"/>
+  <rect x="230" y="176" width="52" height="8" rx="4" fill="#FFFFFF" opacity="0.35"/>
+  <rect x="230" y="196" width="52" height="8" rx="4" fill="#FFFFFF" opacity="0.35"/>
+
+  <!-- Mic Cradle & Stand -->
+  <path d="M180 248 v20 a76 76 0 0 0 152 0 v-20" fill="none" stroke="#E9D5FF" stroke-width="18" stroke-linecap="round"/>
+  <line x1="256" y1="344" x2="256" y2="386" stroke="#E9D5FF" stroke-width="18" stroke-linecap="round"/>
+  <line x1="208" y1="386" x2="304" y2="386" stroke="#E9D5FF" stroke-width="18" stroke-linecap="round"/>
+</svg>

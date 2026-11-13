@@ -1,0 +1,180 @@
+{
+  "entities": {
+    "UserSettings": {
+      "title": "UserSettings",
+      "description": "Non-PII workspace preferences and active script draft for an authenticated voiceover studio user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "preferredVoice": {
+          "type": "string",
+          "description": "Selected voice profile ID",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "speakingRate": {
+          "type": "number",
+          "description": "Playback rate between 0.8 and 1.5"
+        },
+        "draftText": {
+          "type": "string",
+          "description": "Auto-saved Arabic voiceover script draft",
+          "maxLength": 10000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-update timestamp"
+        }
+      },
+      "required": ["uid", "preferredVoice", "speakingRate", "draftText", "createdAt", "updatedAt"]
+    },
+    "UserPrivateProfile": {
+      "title": "UserPrivateProfile",
+      "description": "Isolated PII profile information accessible only to the owning user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User email address",
+          "maxLength": 320
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name",
+          "maxLength": 120
+        },
+        "photoURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "User avatar URL",
+          "maxLength": 1000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-update timestamp"
+        }
+      },
+      "required": ["uid", "email", "displayName", "photoURL", "createdAt", "updatedAt"]
+    },
+    "VoiceoverProject": {
+      "title": "VoiceoverProject",
+      "description": "Saved Arabic voiceover script, voice configuration, and generated SRT subtitle metadata.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the project owner",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "description": "Short project title derived from script or user input",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "text": {
+          "type": "string",
+          "description": "Arabic voiceover script text",
+          "minLength": 1,
+          "maxLength": 10000
+        },
+        "voiceId": {
+          "type": "string",
+          "description": "Voice profile identifier",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "voiceName": {
+          "type": "string",
+          "description": "Display name of the voice profile",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "speakingRate": {
+          "type": "number",
+          "description": "Speaking rate used for synthesis (0.8 - 1.5)"
+        },
+        "srtContent": {
+          "type": "string",
+          "description": "Generated SRT subtitle track",
+          "maxLength": 20000
+        },
+        "charCount": {
+          "type": "integer",
+          "description": "Character length of the script"
+        },
+        "estimatedDurationSeconds": {
+          "type": "number",
+          "description": "Estimated or measured audio duration in seconds"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-update timestamp"
+        }
+      },
+      "required": [
+        "ownerId",
+        "title",
+        "text",
+        "voiceId",
+        "voiceName",
+        "speakingRate",
+        "srtContent",
+        "charCount",
+        "estimatedDurationSeconds",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserSettings" },
+      "description": "Stores non-PII user studio settings and auto-saved draft text."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateProfile" },
+      "description": "Isolated subcollection storing user PII (email, displayName, photoURL) strictly restricted to the owning user."
+    },
+    "/users/{userId}/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/VoiceoverProject" },
+      "description": "Stores saved voiceover scripts, selected voice settings, and SRT subtitle tracks owned by the user."
+    }
+  }
+}
